@@ -9,9 +9,12 @@ object ActorsIntro extends App{
   println(actorSystem.name) // FirstActorSystem
 
   //part2 creating actor
-  class WordCountActor extends Actor{
-    var totalWordCount = 0
-    def receive: PartialFunction[Any, Unit] = {
+  class WordCountActor extends Actor{ // An actor has internal data and behavior
+    var totalWordCount = 0    // internal data
+
+    def receive: Receive = { // alias PartialFunction as Receive
+      // def receive: PartialFunction[Any, Unit] = {
+      // behavior is receive() which return an instance of PartialFunction from Any => Unit.
       case message: String =>
         println(s"[word counter] I have received a message:- $message")
         totalWordCount += message.split(" ").length
@@ -34,6 +37,7 @@ object ActorsIntro extends App{
   wordCounter.!("New Message")
   // sending messages here is asynchronous, example:-
   anotherWordCounter ! "This is a from message different another ActorRef"
+  // ! is known as tell
   /** We see that "anotherWordCounter" receives it's message before
    * the "wordCounter" receives it's own message.
    * This is because akka sends messages to actors asynchronously.*/
