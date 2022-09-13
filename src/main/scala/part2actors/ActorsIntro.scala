@@ -27,8 +27,14 @@ object ActorsIntro extends App{
   val wordCounter: ActorRef = actorSystem.actorOf(Props[WordCountActor], name="wordCounter")
   // returnType is ActorRef which is a DS, why? so that we cannot call actor instance as we used to in OOPs
   // We can communicate with this actor via actor Reference.
+  val anotherWordCounter: ActorRef = actorSystem.actorOf(Props[WordCountActor], name="anotherWordCounter")
 
   // part 4 communicating with actor
   wordCounter ! "I am learning akka and it's cool"
-  wordCounter.!("New Message") //
+  wordCounter.!("New Message")
+  // sending messages here is asynchronous, example:-
+  anotherWordCounter ! "This is a from message different another ActorRef"
+  /** We see that "anotherWordCounter" receives it's message before
+   * the "wordCounter" receives it's own message.
+   * This is because akka sends messages to actors asynchronously.*/
 }
