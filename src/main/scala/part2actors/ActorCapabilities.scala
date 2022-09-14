@@ -1,6 +1,7 @@
 package part2actors
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import part2actors.ActorCapabilities.Person.LiveTheLife
 
 object ActorCapabilities extends App{
 //  val actorSystem = ActorSystem("")
@@ -124,4 +125,117 @@ object ActorCapabilities extends App{
    * Actors are aware of the actor reference that last sent a message to them (sender)
       by using sender()/context.sender() and they can use that to reply messages with other messages.
    * */
+
+
+
+  /** ------------------------------ Exercise 1
+   * Create a Counter actor, that holds an Int counter
+   * Increment Decrement and Print counter
+   * */
+
+  // Put messages that actor supports in actor's companion object
+  object Counter {
+    case object Increment
+
+    case object Decrement
+
+    case object Print
+  }
+  class Counter extends Actor{
+    import Counter._
+    var counter: Int = 0
+    override def receive: Receive = {
+      case Increment =>  counter += 1
+      case Decrement => counter -= 1
+      case Print => println(s"[counter] My current count is:- $counter")
+    }
+  }
+  val counterActor = system.actorOf(Props[Counter], "counterActor")
+  import Counter._
+  counterActor ! Increment
+  counterActor ! Print
+  counterActor ! Increment
+  counterActor ! Print
+  counterActor ! Decrement
+  counterActor ! Decrement
+  counterActor ! Print
+
+  (1 to 5) foreach(_ =>counterActor ! Increment)
+  counterActor ! Print
+  (1 to 3) foreach(_ =>counterActor ! Decrement)
+  counterActor ! Print
+
+  /** Exercise 2
+   * Create a BankAccount as an Actor
+   * This Actor will be able to receive some messages to
+   * -Deposit an amount and to
+   * -Withdraw an amount
+   * -Statement
+   *
+   * Rather than printing things to console,
+   * Actor will react to deposit and withdraw by sending back or replying with a Success or Failure of each of these
+   * three bank operations....
+   *
+   * Actor :-
+   *  receives:
+        -Deposit
+        -Withdraw
+        -Statement
+  * replies with:-
+        -Success
+        -Failure
+   * */
+
+  object BankAccount{
+    case class Deposit(amount: Int)
+    case class Withdraw(amount: Int)
+    case object Statement
+
+    case class TransactionSuccess(message: String)
+    case class TransactionFailure(reason: String)
+  }
+  class BankAccount extends Actor{
+    import BankAccount._
+    var balance = 100000
+    override def receive: PartialFunction[Any, Unit] = {
+
+      case Deposit(amount) =>
+        if (amount <= 0) sender() ! TransactionFailure("Invalid amount")
+        else {
+          balance += amount
+          sender() ! TransactionSuccess(s"Successfully deposited $amount")
+        }
+
+      case Withdraw(amount) =>
+        if (balance < amount) sender() ! TransactionFailure("Insufficient Balance")
+        else if (amount < 0) TransactionFailure("Invalid withdraw amount")
+        else{
+          balance -= amount
+          sender() ! TransactionSuccess(s"Successfully withdrew $amount")
+        }
+      case Statement => sender() ! s"Your balance is:- $balance"
+    }
+  }
+
+  object Person{
+    case class LiveTheLife(account: ActorRef) // Actor parameter
+  }
+  class Person extends Actor{
+    import BankAccount._
+    import Person.LiveTheLife
+    override def receive: Receive = {
+      case LiveTheLife(account) =>
+        account ! Deposit(10)
+        account ! Withdraw(900000)
+        account ! Withdraw(10000)
+        account ! Statement
+      case message => println(message.toString)
+    }
+  }
+
+  val bankActor = system.actorOf(Props[BankAccount], "bankActor")
+  val personActor = system.actorOf(Props[Person], "personActor")
+
+  personActor ! LiveTheLife(bankActor)
+  personActor ! "This is a message"
 }
