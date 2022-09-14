@@ -2,4 +2,4 @@
 2. AkkaWithConstructorArgs.scala
 3. AkkaCapabilities.scala
 4. HowAkkaWorks.scala
-5. ChangingActorBehaviour.scala
+5. ChangingActorBehavior.scala
