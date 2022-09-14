@@ -198,7 +198,7 @@ object ActorCapabilities extends App{
     import BankAccount._
     var balance = 100000
     override def receive: PartialFunction[Any, Unit] = {
-
+      // POINT-2. BankAccount Actor replying to the 4 messages sent by Person Actor
       case Deposit(amount) =>
         if (amount <= 0) sender() ! TransactionFailure("Invalid amount")
         else {
@@ -225,10 +225,12 @@ object ActorCapabilities extends App{
     import Person.LiveTheLife
     override def receive: Receive = {
       case LiveTheLife(account) =>
+        // POINT-1. Person Actor Sending 4 messages to BankAccount Actor
         account ! Deposit(10)
         account ! Withdraw(900000)
         account ! Withdraw(10000)
         account ! Statement
+        // POINT-3. PersonActor receives reply's from BankActor and prints them to console.
       case message => println(message.toString)
     }
   }
@@ -237,5 +239,15 @@ object ActorCapabilities extends App{
   val personActor = system.actorOf(Props[Person], "personActor")
 
   personActor ! LiveTheLife(bankActor)
-  personActor ! "This is a message"
+  /** Control flow point 1, 2 and 3*/
+
+
+  /**    Questions
+   * Can we assume any ordering of the messages?
+   * if i sent 10 messages to same actor, can i assume they arrive in particular order
+
+   * Aren't we causing race conditions(if multiple threads are accessing var)?
+   * Do we need some synchronization to prevent race conditions on actor's internal state.
+
+   * What does Asynchronous actually mean for actors?*/
 }
