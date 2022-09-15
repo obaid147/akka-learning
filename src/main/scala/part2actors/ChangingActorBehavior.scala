@@ -159,4 +159,36 @@ object ChangingActorBehavior extends App{
   kidRef ! Food(CHOCOLATE)
   kidRef ! Food(CHOCOLATE)
   */
+
+  /** Exercise - 1
+   * create a stateless Counter Actor*/
+  object Counter {
+    case object Increment
+    case object Decrement
+    case object Print
+  }
+
+  class Counter extends Actor {
+    import Counter._
+    override def receive: Receive = counterReceive(0)
+    def counterReceive(counter: Int): Receive = {
+      case Increment => context.become(counterReceive(counter+1))
+      case Decrement => context.become(counterReceive(counter-1))
+      case Print => println(s"Counter at $counter")
+    }
+  }
+
+  val counterActor = system.actorOf(Props[Counter], "counterActor")
+
+  import Counter._
+//  (1 to 5) foreach (_ => counterActor ! Increment)
+  counterActor ! Increment
+  counterActor ! Increment
+  counterActor ! Increment
+  counterActor ! Print
+  counterActor ! Decrement
+  counterActor ! Print
+
+  //  (1 to 3) foreach (_ => counterActor ! Decrement)
+//  counterActor ! Print
 }
