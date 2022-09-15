@@ -104,7 +104,7 @@ object ChangingActorBehavior extends App{
   1. Without BOOLEAN arg of become(),
       implementation will replace HappyHandler with SadHandler, then will replace sadHandler with happyHandler.
 
-    -------- STACK PUSH --------------
+    -------- context.become(mandatory Receive param, bool discardOld) --------------
   2. With BOOLEAN arg of become() in both sad and happy handler is false,
       Stack at start:-
       1. happyReceive
@@ -121,7 +121,7 @@ object ChangingActorBehavior extends App{
             2. sadReceive
             3. happyReceive
 
--------- STACK POP --------------
+-------- context.unbecome() --------------
   we use context.unbecome() to go back to old receive handler in the stack
 
   new behavior:- context.unbocome   .... where sadHandler(veg) => context.become(sadReceive, false)
@@ -148,12 +148,12 @@ object ChangingActorBehavior extends App{
     updated stack
       1. HappyReceive
 
-  ---- kid is sad
+  ---- kid is sad with these messages
   kidRef ! Food(VEGETABLE)
   kidRef ! Food(VEGETABLE)
   kidRef ! Food(CHOCOLATE)
 
-  ---- kid is happy
+  ---- kid is happy with these messages
   kidRef ! Food(VEGETABLE)
   kidRef ! Food(VEGETABLE)
   kidRef ! Food(CHOCOLATE)
