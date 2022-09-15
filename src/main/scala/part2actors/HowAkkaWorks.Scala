@@ -34,7 +34,7 @@
             which point thread releases control of this Actor and it will move on to do something else
 
       3. This whole process offers us some GUARANTEES
-        a) Only 1 thread operates on a thread at any time. Makes actors single threaded.
+        a) Only 1 thread operates on an Actor at any time. Makes actors single threaded.
 
         b) No thread locks needed(No SYNCHRONIZATION needed)
             Only one thread has access to actors internal state at any time.
