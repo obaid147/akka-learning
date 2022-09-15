@@ -192,4 +192,89 @@ object ChangingActorBehavior extends App{
   //  (1 to 3) foreach (_ => counterActor ! Decrement)
 //  counterActor ! Print
 
+
+  /** Exercise - 2
+   * create a Simplified voting system
+   *
+   * We have 2 kinds of Actors in this voting system*/
+
+  /**
+   * 1.If we send this msg to the citizen, mark the citizen as having voted for this candidate.
+   * 2.Citizen will receive this Vote exactly once and once it receives the Vote,
+   *    it will turn itself into a state of having voted with a candidate.
+   * 3.VoteAggregator will be able to send messages to the citizen asking them who they voted.
+   * 4.VoteAggregator having received an AggregateVotes message will then ask each citizen in return a message
+   *    called VoteStatusRequest
+   * 5.VoteAggregator having received an AggregateVotes message from this application,
+   *    It will then use every single citizen as an ActorRef from the parameter and it will send each of those citizen
+   *    one of these messages VoteStatusRequest.
+   *    and each Citizen will reply with a case class VoteStatusReply, where each msg will contain the candidate.
+   */
+  //Citizen will handle some messages for voting
+  case class Vote(candidate: String)
+  case object VoteStatusRequest
+  case class VoteStatusReply(candidates: Option[String])
+  class Citizen extends Actor {
+    var candidate: Option[String] = None
+    override def receive: Receive = {
+      case Vote(c) => candidate = Some(c)
+      case VoteStatusRequest => sender() ! VoteStatusReply(candidate)
+    }
+  }
+
+  case class AggregateVotes(citizen: Set[ActorRef])
+  class VoteAggregator extends Actor {
+    var stillWaiting: Set[ActorRef] = Set()
+    var currentStats: Map[String, Int] = Map()
+    override def receive: Receive = {
+      case AggregateVotes(citizens) =>
+        stillWaiting = citizens
+        citizens.foreach(citizenRef =>
+          citizenRef ! VoteStatusRequest)
+      case VoteStatusReply(None) => // citizen has not voted yet
+        sender() ! VoteStatusRequest // might infinite loop, if a citizen never voted
+      case VoteStatusReply(Some(candidate)) =>
+        val newStillWaiting = stillWaiting - sender()
+        val currentVotesOfCandidate = currentStats.getOrElse(candidate, 0)
+        currentStats += (candidate -> (currentVotesOfCandidate + 1))
+        if (newStillWaiting.isEmpty) println(s"[Aggregator] pool stats:- $currentStats")
+        else stillWaiting = newStillWaiting
+
+
+    }
+  }
+
+  val alice = system.actorOf(Props[Citizen], "citizenAlice")
+  val bob = system.actorOf(Props[Citizen], "citizenBob")
+  val charlie = system.actorOf(Props[Citizen], "citizenCharlie")
+  val daniel = system.actorOf(Props[Citizen], "citizenDaniel")
+
+  alice ! Vote("Martin") // alice votes for Martin // 1
+  bob ! Vote("Jonas") // bob votes for Jonas // 1
+  charlie ! Vote("Roland") // charlie votes for Roland // 1
+  daniel ! Vote("Roland") // daniel votes for Roland // 2
+
+  val voteAggregator = system.actorOf(Props[VoteAggregator], "voteAggregator")
+  voteAggregator ! AggregateVotes(Set(alice, bob, charlie, daniel))
+
+  /* EndResult     MAP[Candidate, number of candidate votes]
+    --> print the status of the votes
+    [Aggregator] pool stats: Map(Roland -> 2, Martin -> 1, Jonas -> 1)
+   */
+
+  /** Code description
+   * We have 4 actors and each of them votes for their own candidate.
+
+   * VoteAgg receives this message AggVotes with the 4 citizens.
+   * as a reaction to it, AggVotes sends each citizen a VoteStatusRequest.(VoteAggregator class).
+
+   * All of the 4 citizens we have, Will react to this VoteStatusRequest by sending back VoteStatusReply
+   *  with their own candidate to the sender which is the VoteAgg Actor.
+
+   * VoteStatusReply(Some(candidate)) will receive 4 VoteStatusReply's with Some(candidate)
+   * as reaction to each 4 of them, VoteAgg will update it's currentStats.
+
+   * Finally at the end,
+   * When the VoteAgg receives it's last message, newStillWaiting will be empty and prints to console.
+   * */
 }
