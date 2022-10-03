@@ -57,6 +57,7 @@ object ChildActors extends App{
   * 1. /system   --- System Guardian (Manages all system actors)
   * 2. /user     --- User Guardian (Every actor we create using (system.actorOf) is owned by /user
   * 3. /         --- Root Guardian (Manages both the system and user level guardian, Top of sys and user.
+                     If we get an exception here, the whole ActorSystem will be down.
   */
 
   // --------------3. Actor Selection
