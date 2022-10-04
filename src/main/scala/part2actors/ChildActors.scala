@@ -1,7 +1,7 @@
 package part2actors
 
 import akka.actor.{Actor, ActorRef, ActorSelection, ActorSystem, Props}
-import part2actors.ChildActors.CreditCard.{AttachToAccount, CheckStatus}
+//import part2actors.ChildActors.CreditCard.{AttachToAccount, CheckStatus}
 
 object ChildActors extends App{
   // Actors create other actors by invoking context.actorOf
@@ -18,7 +18,7 @@ object ChildActors extends App{
       case CreateChild(name) =>
         println(s"${self.path} creating child")
 
-        // create a new actor inside receive message handler inside this actor.
+        // create a new actor inside receive message handler of this actor.
         val childRef: ActorRef = context.actorOf(Props[Child], name)
         context.become(withChild(childRef)) // change message handler
     }
@@ -39,7 +39,7 @@ object ChildActors extends App{
 
   val parent = system.actorOf(Props[Parent], "Parent")
   import Parent._
-  parent ! CreateChild("Child")
+  parent ! CreateChild("Child") // After creating child, Parent will change it's message handler to withChild
   /*As a reaction to CreateChild, Parent will create a new Actor of type Child with a name "Child"
   * and then parent changes it's message handler*/
 
@@ -91,11 +91,11 @@ object ChildActors extends App{
       case Withdraw(funds) => withdraw(funds)
     }
 
-    def deposit(funds: Int) = {
+    def deposit(funds: Int): Unit = {
       println(s"${self.path} depositing $funds on top of $amount")
       amount += funds
     }
-    def withdraw(funds: Int) = {
+    def withdraw(funds: Int): Unit = {
       println(s"${self.path} withdrawing $funds from $amount")
       amount -= funds
     }
@@ -106,6 +106,7 @@ object ChildActors extends App{
     case object CheckStatus
   }
   class CreditCard extends Actor{
+    import CreditCard._
     override def receive: Receive = {
       case AttachToAccount(account) => context.become(attachedToAccount(account))
     }
@@ -122,7 +123,7 @@ object ChildActors extends App{
   bankAccountRef ! Deposit(100)
   Thread.sleep(500)
   val creditCardSelection = system.actorSelection("/user/account/card")
-  creditCardSelection ! CheckStatus // This should just return a status
+  creditCardSelection ! CheckStatus // This should just return a status but it deducts 1 Rs funds from my account
 }
 
 object Exercise111 extends App {
@@ -190,5 +191,5 @@ object Exercise111 extends App {
   val testActor = counterSystem.actorOf(Props[TestActor], "TestActor")
 
   testActor ! "go"
-  // round robin logic, 1,2,3,4,5 workers will complete 7 tasks like: 1,2,3,4,5,1,2
+  // round robin logic, 1,2,3,4,5 workers will complete 7 tasks like: 1,2,3,4,5,1,2*/
 }
