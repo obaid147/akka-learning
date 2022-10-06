@@ -3,7 +3,9 @@ package part4faulttolerance
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 
 object StartingStoppingActorsMethod1 extends App {
-
+  /**
+   * method 1 - using context.stop
+   * */
   val system = ActorSystem("StartingStoppingActorsDemo")
 
   object Parent {
