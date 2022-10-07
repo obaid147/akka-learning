@@ -7,6 +7,7 @@ object StartingStoppingActorsMethod3 extends App {
 
   /**
    * Method 3 - Death Watch - context.watch (Mechanism for being notified when an Actor dies.)
+   * context.watch can watch more than one actor, not necessarily children.
    * context.unwatch (Is very useful when we expect a reply from an actor until we get a response we register for
       its death watch because it might die in the meantime.And when you get the response that you want,
       you naturally unsubscribe from the actor's Death Watch because you don't care if it's alive anymore.)
