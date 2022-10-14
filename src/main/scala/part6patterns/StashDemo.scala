@@ -37,7 +37,7 @@ object StashDemo extends App {
   case class Write(data: String)
 
   // Step 1 - mixin Stash trait
-  class ResourceActor extends Actor with ActorLogging with Stash {
+  class ResourceActor extends Actor with ActorLogging with Stash { // always mixin Stash trait at last
     private var innerData: String = ""
 
     override def receive: Receive = closed
