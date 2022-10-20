@@ -1,6 +1,6 @@
 package part6patterns
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Cancellable, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Cancellable, FSM, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
@@ -155,6 +155,81 @@ object FSMSpec {
       context.system.scheduler.scheduleOnce(1.second){
         self ! ReceiveMoneyTimeout
       }
+    }
+  }
+
+  // ------------------------------------------- Finite State Machine
+  trait VendingState
+
+  case object Idle extends VendingState
+  case object Operational extends VendingState
+  case object WaitForMoney extends VendingState
+
+  trait VendingData
+
+  case object Uninitialized extends VendingData
+  case class Initialized(inventory: Map[String, Int], prices: Map[String, Int]) extends VendingData
+  case class WaitForMoneyData(inventory: Map[String, Int],
+                              prices: Map[String, Int],
+                              product: String,
+                              money: Int,
+                              requester: ActorRef) extends VendingData
+
+  class VendingMachineFSM extends FSM[VendingState, VendingData]{
+  // FSM is an extension of actor with some methods, it takes 2 type parameters.
+  /** WE DON'T HAVE A RECEIVE HANDLER */
+  /** When FSM receives a message,
+   * It triggers an event ---- EVENT(message, data) contains message and data that is currently on hold for this FSM.
+   * OUR job as a programmer is to handle STATES and EVENTS and not messages. */
+
+    startWith(Idle, Uninitialized) // This is eq to our receive method = Idle
+
+    // We need to handle every STATE
+    // when() takes partialFunction as 2nd arg list which handles event
+    when(Idle) {
+      case Event(Initialize(inventory, prices), Uninitialized) =>
+        goto(Operational) using Initialized(inventory, prices) // eq to context.become
+      case _ =>
+        sender() ! VendingError("MachineNotInitializedError") // sender is available FSM extends Actor
+        stay() // staying in the current state
+    }
+    when(Operational) {
+      case Event(RequestProduct(product), Initialized(inventory, prices)) =>
+        inventory.get(product) match {
+          case None | Some(0) => sender() ! VendingError("ProductNotAvailable")
+          stay()
+          case Some(_) =>
+            val price = prices(product)
+            sender() ! Instruction(s"Please insert $price rupees")
+            goto(WaitForMoney) using WaitForMoneyData(inventory, prices, product, 0, sender())
+//            context.become(waitForMoney(inventory, prices, product, 0, startReceiveMoneyTimeoutSchedule, sender()))
+        }
+    }
+    when(WaitForMoney){
+      case Event(ReceiveMoney(amount), WaitForMoneyData(inventory, prices, product, money, requester)) =>
+        val price = prices(product)
+        if (money + amount >= price) {
+          // user buys product
+          requester ! Deliver(product)
+
+          // deliver change
+          if (money + amount - price > 0) requester ! GiveBackChange(money + amount - price)
+
+          // update inventory
+          val newStock = inventory(product) - 1
+          val newInventory = inventory + (product -> newStock)
+          goto(Operational) using Initialized(newInventory, prices)
+          // context.become(operational(newInventory, prices))
+        } else {
+          val remainingMoney = price - money - amount
+          requester ! Instruction(s"please insert remaining money:- $remainingMoney rupees")
+          stay using WaitForMoneyData(inventory, prices, product, money+amount, requester)
+          /*context.become(waitForMoney(
+            inventory, prices, product, // don't change
+            money + amount, // user has inserted some money
+            startReceiveMoneyTimeoutSchedule, // I need to set the timeout again
+            requester))*/
+        }
     }
   }
 
