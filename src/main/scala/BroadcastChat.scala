@@ -31,6 +31,7 @@ class Server extends Actor {
 
   }
 
+
   def broadcast(info:Msg): Unit = {
     clients.foreach(_._2 ! info)
   }
@@ -41,8 +42,8 @@ class Client(username:String,server:ActorRef) extends Actor {
   override def receive: Receive = {
     case info:Info =>
       println(s"[$username's client]- ${info.msg}")
-    case send: Send =>
-      server ! BroadCast(send.msg)
+    case Send(msg) =>
+      server ! BroadCast(msg)
     case newMsg:NewMessage =>
       if(username != newMsg.from)
       println(s"[$username's client]- from = ${newMsg.from},message = ${newMsg.msg}")
@@ -67,19 +68,18 @@ object BroadcastChat extends App {
   val client1 = system.actorOf(Client.props("amr",server),"Client1")
   val client2: ActorRef = system.actorOf(Client.props("oby",server),"Client2")
 
-  Thread.sleep(300)
+  Thread.sleep(2000)
 
   client2 ! Send("Hi all")
+    Thread.sleep(300)
+    val client3 = system.actorOf(Client.props("faw",server),"Client3")
+    val client4 = system.actorOf(Client.props("raf",server),"Client4")
 
-  Thread.sleep(300)
-  val client3 = system.actorOf(Client.props("faw",server),"Client3")
-  val client4 = system.actorOf(Client.props("raf",server),"Client4")
+    Thread.sleep(1000)
 
-//  Thread.sleep(1000)
+    client1 ! Send("lechmovo sarneee")
+    Thread.sleep(1000)
 
-//  client1 ! Send("lechmovo sarneee")
-//  Thread.sleep(1000)
-
-//  client4 ! Disconnect
+    client4 ! Disconnect
 
 }
