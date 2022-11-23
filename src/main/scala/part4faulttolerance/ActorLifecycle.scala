@@ -1,7 +1,10 @@
 package part4faulttolerance
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-//                              ActorSystem.PNG
+/*
+ open ActorSystem.PNG for better understanding of comments.
+
+*/
 
 /** #1 ***** Actor Instance ***** Denoted by diamond.
  * Has Methods.
