@@ -9,8 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 //step1  import ask and pipe
-import akka.pattern.ask
-import akka.pattern.pipe
+import akka.pattern.{ask, pipe}
 
 
 class AskSpec extends TestKit(ActorSystem("AskSpec"))
@@ -31,7 +30,7 @@ class AskSpec extends TestKit(ActorSystem("AskSpec"))
 
     def authenticatorTestSuite(props: Props): Unit = {
       import AuthManager._
-      "fail to authenticate a non registered uer" in {
+      "fail to authenticate a non registered user" in {
         val pipedAuthManager = system.actorOf(props)
         pipedAuthManager ! Authenticate("obaid", "akka")
         expectMsg(AuthFailure(AuthManager.AUTH_FAILURE_NOT_FOUND))
